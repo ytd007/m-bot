@@ -1,0 +1,31 @@
+name: Run Telegram Bot 24/7
+
+on:
+  schedule:
+    - cron: '0 */5 * * *'  # සෑම පැය 5කට වරක් Auto Restart වේ
+  workflow_dispatch:        # Manual Start කිරීමට
+
+jobs:
+  run-bot:
+    runs-on: ubuntu-latest
+    timeout-minutes: 350    # පැය 5 හමාරකට පසු ආරක්ෂිතව Restart වේ
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+
+      - name: Start Bot
+        env:
+          BOT_TOKEN: ${{ secrets.BOT_TOKEN }}
+          ADMIN_ID: ${{ secrets.ADMIN_ID }}
+          MONGO_URI: ${{ secrets.MONGO_URI }}
+        run: python main.py
