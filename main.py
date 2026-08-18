@@ -30,7 +30,9 @@ if MONGO_URI:
 # Command Handlers
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user = update.effective_user
-    
+    if not user or not update.message:
+        return
+        
     # Save user to MongoDB
     if db is not None:
         try:
@@ -46,11 +48,21 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(f"ආයුබෝවන් {user.first_name}! Bot එක සක්‍රියව ක්‍රියාත්මක වේ.")
 
 async def admin_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    user_id = str(update.effective_user.id)
-    if ADMIN_ID and user_id == str(ADMIN_ID):
+    user = update.effective_user
+    if not user or not update.message:
+        return
+
+    # ADMIN_ID එක සසඳන විට Spaces ඉවත් කර ආරක්ෂිතව පරීක්ෂා කිරීම
+    current_user_id = str(user.id).strip()
+    configured_admin_id = str(ADMIN_ID).strip() if ADMIN_ID else ""
+
+    if configured_admin_id and current_user_id == configured_admin_id:
         total_users = 0
         if db is not None:
-            total_users = db["users"].count_documents({})
+            try:
+                total_users = db["users"].count_documents({})
+            except Exception as e:
+                logging.error(f"Error counting users: {e}")
         await update.message.reply_text(f"👋 Admin Panel\n\nසම්පූර්ණ පරිශීලකයින් ගණන: {total_users}")
     else:
         await update.message.reply_text("ඔබට මෙම Command එක භාවිත කිරීමට අවසර නැත.")
